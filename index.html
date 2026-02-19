@@ -2,499 +2,132 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Galaxia de apoyo · Mensajes flotantes</title>
   <style>
-    /* ----- RESET Y ESTILOS GENERALES ----- */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { min-height:100vh; background:#03050f; font-family:'Segoe UI',sans-serif; overflow-x:hidden; color:white; }
 
-    body {
-      min-height: 100vh;
-      background-color: #03050f; /* negro base */
-      font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, sans-serif;
-      overflow-x: hidden;
-      color: white;
-    }
+    .galaxy-wrapper { position:relative; width:100%; min-height:100vh; background: radial-gradient(ellipse at 40% 50%, #1a1035, #03010a 80%); overflow:hidden; }
 
-    /* Contenedor principal, ocupa toda la pantalla */
-    .galaxy-wrapper {
-      position: relative;
-      width: 100%;
-      min-height: 100vh;
-      background: radial-gradient(ellipse at 40% 50%, #1a1035, #03010a 80%);
-      overflow: hidden;
-    }
+    /* Canvas ligero para estrellas parpadeantes */
+    #galaxy-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none; }
 
-    /* ----- FONDO DE GALAXIA EN MOVIMIENTO (ESTRELLAS + NEBULOSAS) ----- */
-    #galaxy-canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: block;
-      z-index: 1;
-      pointer-events: none; /* para que los mensajes sean cliqueables / seleccionables si se desea */
-    }
+    /* Nebulosas CSS (más ligero) */
+    .nebulae-layer { position:absolute; top:0; left:0; width:100%; height:100%; z-index:2; pointer-events:none; opacity:0.5; mix-blend-mode:screen; }
+    .nebula, .nebula2 { position:absolute; width:100%; height:100%; pointer-events:none; }
+    .nebula { background: radial-gradient(circle at 30% 40%, rgba(140,90,255,0.3), transparent 60%); filter:blur(15px); animation: drift 40s infinite alternate ease-in-out; }
+    .nebula2 { background: radial-gradient(circle at 70% 60%, rgba(200,130,255,0.25), transparent 60%); filter:blur(25px); animation: drift2 50s infinite alternate-reverse; }
+    @keyframes drift { 0% {transform:translate(0,0);} 100% {transform:translate(-3%,2%);} }
+    @keyframes drift2 { 0% {transform:translate(0,0);} 100% {transform:translate(2%,-3%);} }
 
-    /* ----- CAPA DE NEBULOSAS DIFUMINADAS ADICIONALES (con CSS) ----- */
-    .nebulae-layer {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 2;
-      pointer-events: none;
-      opacity: 0.6;
-      mix-blend-mode: screen;
-    }
-
-    .nebula {
-      position: absolute;
-      background: radial-gradient(circle at 30% 40%, rgba(140, 90, 255, 0.4) 0%, transparent 60%),
-                  radial-gradient(circle at 80% 70%, rgba(200, 130, 255, 0.3) 0%, transparent 70%);
-      filter: blur(20px);
-      width: 100%;
-      height: 100%;
-      animation: slowDrift 32s infinite alternate ease-in-out;
-    }
-
-    .nebula2 {
-      position: absolute;
-      background: radial-gradient(circle at 10% 80%, rgba(80, 120, 255, 0.35) 0%, transparent 65%),
-                  radial-gradient(circle at 95% 20%, rgba(210, 150, 255, 0.4) 0%, transparent 70%);
-      filter: blur(50px);
-      width: 100%;
-      height: 100%;
-      animation: slowDrift2 28s infinite alternate-reverse;
-    }
-
-    @keyframes slowDrift {
-      0% { transform: scale(1) translate(0, 0); opacity: 0.5; }
-      100% { transform: scale(1.2) translate(-3%, 2%); opacity: 0.8; }
-    }
-    @keyframes slowDrift2 {
-      0% { transform: scale(1.1) translate(2%, -1%); opacity: 0.6; }
-      100% { transform: scale(1) translate(-2%, 3%); opacity: 0.9; }
-    }
-
-    /* ----- CONTENEDOR DE LOS MENSAJES FLOTANTES ----- */
-    .floating-messages {
-      position: relative;
-      z-index: 10; /* por encima del canvas y nebulosas */
-      width: 100%;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem 1.5rem;
-      pointer-events: none; /* permite hacer click a través del contenedor, pero los mensajes serán "pointer-events: auto" si queremos */
-    }
-
-    /* Cada mensaje es un elemento individual con su propia animación */
+    /* Mensajes flotantes */
+    .floating-messages { position:relative; z-index:10; width:100%; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem 1.5rem; pointer-events:none; }
     .message {
-      background: rgba(15, 10, 30, 0.35);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      border: 1px solid rgba(190, 160, 255, 0.25);
-      border-radius: 60px;
-      padding: 0.9rem 2.2rem;
-      margin: 0.8rem 0.5rem;
-      font-size: clamp(1.2rem, 6vw, 2.4rem);
-      font-weight: 400;
-      color: #f0eaff;
-      text-shadow: 0 0 20px #b79eff, 0 0 8px #6d41b3;
-      box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 200, 255, 0.15) inset;
-      letter-spacing: 1px;
-      text-align: center;
-      white-space: nowrap; /* para que no se rompan en dos líneas en desktop, pero en móvil se adapta con wrap si es necesario */
-      transition: all 0.2s ease;
-      pointer-events: none; /* no interactuables, solo visual */
-      user-select: none;
-      opacity: 0; /* empezarán invisibles, JS los activará */
-      animation: floatAndFade 9s infinite alternate ease-in-out;
-      will-change: transform, opacity;
-      max-width: 90vw;
-      line-height: 1.4;
+      background: rgba(15,10,30,0.35); backdrop-filter:blur(4px); border:1px solid rgba(190,160,255,0.2);
+      border-radius:60px; padding:0.8rem 2rem; margin:0.6rem 0; font-size:clamp(1.2rem,5vw,2.2rem); font-weight:400; color:#f0eaff;
+      text-shadow:0 0 10px #b79eff,0 0 4px #6d41b3; box-shadow:0 10px 20px -10px rgba(0,0,0,0.6); letter-spacing:1px;
+      text-align:center; white-space:nowrap; transition:all 0.2s ease; pointer-events:none; user-select:none; opacity:0;
+      animation: floatFade 9s infinite alternate ease-in-out; will-change:transform,opacity; max-width:90vw; line-height:1.4;
+    }
+    .message.slow { animation-duration:12s; animation-delay:-2s; }
+    .message.medium { animation-duration:8s; animation-delay:-1s; }
+    .message.fast { animation-duration:6s; }
+
+    @keyframes floatFade {
+      0% {transform:translate(0,0) scale(1); opacity:0.2;}
+      25% {opacity:1;}
+      50% {transform:translate(6px,-8px) scale(1.02); opacity:0.95;}
+      75% {opacity:1;}
+      100% {transform:translate(-4px,6px) scale(0.98); opacity:0.3;}
     }
 
-    /* En móviles muy pequeños, permitimos que el texto haga wrap si es muy largo */
-    @media (max-width: 480px) {
-      .message {
-        white-space: normal;
-        word-break: break-word;
-        padding: 0.7rem 1.4rem;
-      }
+    .message.drift { animation-name: floatFadeAlt; }
+    @keyframes floatFadeAlt {
+      0% {transform:translate(0,0) rotate(0deg); opacity:0.1;}
+      30% {transform:translate(-8px,-6px) rotate(-1deg); opacity:1;}
+      70% {transform:translate(10px,4px) rotate(1deg); opacity:0.9;}
+      100% {transform:translate(0,-6px) rotate(0deg); opacity:0.2;}
     }
 
-    /* Variación de tiempos y desplazamientos para cada mensaje (se asignan clases adicionales con JS) */
-    .message.slow {
-      animation-duration: 12s;
-      animation-delay: -2s;
-    }
-    .message.medium {
-      animation-duration: 8s;
-      animation-delay: -1s;
-    }
-    .message.fast {
-      animation-duration: 6s;
-    }
+    .message:nth-child(odd){align-self:flex-start;margin-left:5%;}
+    .message:nth-child(even){align-self:flex-end;margin-right:5%;}
+    .message:nth-child(3n){align-self:center;}
+    @media(max-width:600px){.message:nth-child(odd){margin-left:2%;}.message:nth-child(even){margin-right:2%;} .message{white-space:normal; word-break:break-word; padding:0.7rem 1.4rem;} }
 
-    /* Animación principal: flotar y cambiar opacidad suavemente */
-    @keyframes floatAndFade {
-      0% {
-        transform: translate(0px, 0px) scale(1);
-        opacity: 0.2;
-        filter: blur(0.5px);
-      }
-      25% {
-        opacity: 1;
-        filter: blur(0);
-      }
-      50% {
-        transform: translate(8px, -12px) scale(1.02);
-        opacity: 0.95;
-      }
-      75% {
-        opacity: 1;
-      }
-      100% {
-        transform: translate(-6px, 10px) scale(0.98);
-        opacity: 0.3;
-        filter: blur(1px);
-      }
-    }
+    /* Créditos */
+    .credit { position:absolute; bottom:12px; right:20px; color:rgba(255,240,255,0.3); font-size:0.8rem; z-index:20; pointer-events:none; backdrop-filter:blur(2px); padding:0.2rem 0.8rem; border-radius:40px; background:rgba(10,5,20,0.2); }
 
-    /* Segunda animación para que algunas tengan un movimiento diferente */
-    .message.drift {
-      animation-name: floatAndFadeAlt;
-    }
-    @keyframes floatAndFadeAlt {
-      0% {
-        transform: translate(0, 0) rotate(0deg);
-        opacity: 0.1;
-      }
-      30% {
-        transform: translate(-12px, -8px) rotate(-1deg);
-        opacity: 1;
-      }
-      70% {
-        transform: translate(14px, 5px) rotate(1deg);
-        opacity: 0.9;
-      }
-      100% {
-        transform: translate(0, -10px) rotate(0deg);
-        opacity: 0.2;
-      }
-    }
-
-    /* Ajustes para alinear los mensajes de forma asimétrica y natural */
-    .message:nth-child(odd) {
-      align-self: flex-start;
-      margin-left: 5%;
-    }
-    .message:nth-child(even) {
-      align-self: flex-end;
-      margin-right: 5%;
-    }
-    .message:nth-child(3n) {
-      align-self: center;
-    }
-
-    /* Mensajes más pequeños en móvil y sin tanto padding */
-    @media (max-width: 600px) {
-      .message:nth-child(odd) {
-        margin-left: 2%;
-      }
-      .message:nth-child(even) {
-        margin-right: 2%;
-      }
-    }
-
-    /* Pequeña decoración adicional: partículas brillantes lejanas (estrellas extra) */
-    .twinkling-stars {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 3;
-      pointer-events: none;
-      background: transparent;
-      background-image: radial-gradient(2px 2px at 15px 60px, #fff, rgba(0,0,0,0)),
-                        radial-gradient(2px 2px at 72px 430px, #f8e2ff, rgba(0,0,0,0)),
-                        radial-gradient(3px 3px at 850px 220px, #b3d0ff, rgba(0,0,0,0)),
-                        radial-gradient(1px 1px at 320px 712px, #e2d5ff, rgba(0,0,0,0)),
-                        radial-gradient(2px 2px at 90% 15%, #ffecb3, rgba(0,0,0,0)),
-                        radial-gradient(2px 2px at 10% 88%, #c7b9ff, rgba(0,0,0,0));
-      background-repeat: no-repeat;
-      opacity: 0.7;
-      animation: twinkle 6s infinite alternate;
-    }
-
-    @keyframes twinkle {
-      0% { opacity: 0.4; }
-      100% { opacity: 1; }
-    }
-
-    /* Nota de amor oculta o pie de página */
-    .credit {
-      position: absolute;
-      bottom: 12px;
-      right: 20px;
-      color: rgba(255, 240, 255, 0.3);
-      font-size: 0.8rem;
-      z-index: 20;
-      pointer-events: none;
-      backdrop-filter: blur(2px);
-      padding: 0.2rem 0.8rem;
-      border-radius: 40px;
-      background: rgba(10, 5, 20, 0.2);
-    }
   </style>
 </head>
 <body>
   <div class="galaxy-wrapper">
-    <!-- Canvas para el fondo de estrellas dinámicas (galaxia en movimiento) -->
     <canvas id="galaxy-canvas"></canvas>
-
-    <!-- Capas de nebulosa con animación lenta (CSS) -->
     <div class="nebulae-layer">
       <div class="nebula"></div>
       <div class="nebula2"></div>
     </div>
-
-    <!-- Capa extra de estrellas parpadeantes fijas (para mayor profundidad) -->
-    <div class="twinkling-stars"></div>
-
-    <!-- Mensajes de apoyo flotantes -->
-    <div class="floating-messages" id="floatingMessages">
-      <!-- Los mensajes se generarán y añadirán por JavaScript -->
-    </div>
-
-    <!-- Pequeño detalle -->
+    <div class="floating-messages" id="floatingMessages"></div>
     <div class="credit">💫 siempre cerca de ti</div>
   </div>
 
   <script>
-    (function() {
-      // ----------------------------------------------
-      // 1. CONFIGURACIÓN DEL CANVAS (galaxia animada)
-      // ----------------------------------------------
-      const canvas = document.getElementById('galaxy-canvas');
-      const ctx = canvas.getContext('2d');
-      let width, height;
-      let stars = [];
+  (function(){
+    const canvas=document.getElementById('galaxy-canvas');
+    const ctx=canvas.getContext('2d');
+    let width,height,stars=[];
+    const STAR_COUNT=50; // menos estrellas, más ligero
+    const NEBULA_PALETTE=['138,43,226','123,104,238','72,61,139','25,25,112','147,112,219','153,50,204'];
 
-      const STAR_COUNT = 80; // cantidad de estrellas
-      const NEBULA_PALETTE = ['138, 43, 226', '123, 104, 238', '72, 61, 139', '25, 25, 112', '147, 112, 219', '153, 50, 204'];
-
-      function initStars() {
-        stars = [];
-        for (let i = 0; i < STAR_COUNT; i++) {
-          stars.push({
-            x: Math.random(),
-            y: Math.random(),
-            radius: Math.random() * 2.2 + 0.6,
-            speedX: (Math.random() - 0.5) * 0.04,
-            speedY: (Math.random() - 0.5) * 0.02,
-            brightness: Math.random() * 0.7 + 0.3,
-            colorIdx: Math.floor(Math.random() * NEBULA_PALETTE.length),
-            pulse: Math.random() * Math.PI * 2,
-            pulseSpeed: 0.01 + Math.random() * 0.02
-          });
-        }
+    function initStars(){
+      stars=[];
+      for(let i=0;i<STAR_COUNT;i++){
+        stars.push({x:Math.random(),y:Math.random(),radius:Math.random()*1.5+0.5,brightness:Math.random()*0.7+0.3,colorIdx:Math.floor(Math.random()*NEBULA_PALETTE.length),pulse:Math.random()*Math.PI*2,pulseSpeed:0.01+Math.random()*0.02});
       }
+    }
 
-      function resizeCanvas() {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        canvas.width = width;
-        canvas.height = height;
+    function resizeCanvas(){width=window.innerWidth;height=window.innerHeight;canvas.width=width;canvas.height=height;}
+
+    function drawStars(){
+      ctx.clearRect(0,0,width,height);
+      for(let s of stars){
+        s.pulse+=s.pulseSpeed;
+        const alpha=s.brightness*(0.7+0.4*Math.sin(s.pulse))*0.9;
+        ctx.beginPath();
+        ctx.arc(s.x*width,s.y*height,s.radius,0,2*Math.PI);
+        ctx.fillStyle=rgba(${NEBULA_PALETTE[s.colorIdx]},${alpha});
+        ctx.fill();
       }
+    }
 
-      function drawNebulaBackground() {
-        // Dibujamos manchas de nebulosa suaves directamente en el canvas para más dinamismo
-        // Fondo negro azulado
-        const grad = ctx.createRadialGradient(width*0.3, height*0.5, 20, width*0.5, height*0.5, width*0.8);
-        grad.addColorStop(0, '#140b2b');
-        grad.addColorStop(0.6, '#070112');
-        grad.addColorStop(1, '#010003');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, width, height);
+    function animateStars(){ drawStars(); requestAnimationFrame(animateStars); }
 
-        // Pinceladas de nebulosa (transparentes, con blend mode)
-        ctx.globalCompositeOperation = 'screen';
-        ctx.filter = 'blur(40px)';
+    window.addEventListener('resize',resizeCanvas);
+    resizeCanvas(); initStars(); animateStars();
 
-        for (let i = 0; i < 6; i++) {
-          const x = (Math.sin(Date.now() * 0.0005 + i) * 0.2 + 0.5) * width;
-          const y = (Math.cos(Date.now() * 0.0004 + i*2) * 0.2 + 0.6) * height;
-          const radX = width * (0.3 + Math.random() * 0.5);
-          const radY = height * (0.2 + Math.random() * 0.4);
-          const gradient = ctx.createRadialGradient(x, y, 10, x, y, radX);
-          const color = NEBULA_PALETTE[i % NEBULA_PALETTE.length];
-          gradient.addColorStop(0, `rgba(${color}, 0.25)`);
-          gradient.addColorStop(0.7, `rgba(${color}, 0.08)`);
-          gradient.addColorStop(1, `rgba(${color}, 0)`);
-          ctx.fillStyle = gradient;
-          ctx.beginPath();
-          ctx.arc(x, y, radX, 0, Math.PI * 2);
-          ctx.fill();
-        }
+    // Mensajes flotantes
+    const messagesContainer=document.getElementById('floatingMessages');
+    const frases=["Te quiero mucho","Nunca estás sola","Siempre estaré para ti","Eres luz en mi universo","Todo va a estar bien","Contigo siempre","Eres importante","No te rindas","Brillas con fuerza","Aquí estoy","Te abrazo desde aquí","Puedes con todo"];
 
-        // Restaurar blend mode
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.filter = 'none';
-      }
-
-      function drawStars() {
-        ctx.filter = 'blur(0.8px)';
-        for (let s of stars) {
-          // posición en píxeles con movimiento continuo
-          let x = (s.x + s.speedX * (Date.now() * 0.01 % 200)) % 1.2;
-          if (x < 0) x += 1.2;
-          if (x > 1) x -= 0.2; // wrap suave
-          let y = (s.y + s.speedY * (Date.now() * 0.008 % 200)) % 1.2;
-          if (y < 0) y += 1.2;
-          if (y > 1) y -= 0.2;
-
-          const posX = x * width;
-          const posY = y * height;
-
-          // Parpadeo suave
-          s.pulse += s.pulseSpeed;
-          const brightnessFactor = 0.7 + 0.4 * Math.sin(s.pulse);
-          const baseColor = NEBULA_PALETTE[s.colorIdx];
-          const alpha = s.brightness * brightnessFactor * 0.9;
-
-          ctx.beginPath();
-          ctx.arc(posX, posY, s.radius, 0, 2 * Math.PI);
-          ctx.fillStyle = `rgba(${baseColor}, ${alpha})`;
-          ctx.fill();
-
-          // Ocasionalmente un destello más brillante
-          if (s.radius > 1.8 && brightnessFactor > 1.1) {
-            ctx.shadowColor = `rgba(${baseColor}, 0.9)`;
-            ctx.shadowBlur = 10;
-            ctx.fill();
-            ctx.shadowBlur = 0;
-          }
-        }
-        ctx.shadowBlur = 0;
-        ctx.filter = 'none';
-      }
-
-      function animateGalaxy() {
-        if (!ctx) return;
-        // dibuja fondo con nebulosas variables
-        drawNebulaBackground();
-
-        // dibuja estrellas encima
-        drawStars();
-
-        requestAnimationFrame(animateGalaxy);
-      }
-
-      // ----------------------------------------------
-      // 2. CREACIÓN DE MENSAJES FLOTANTES (frases de apoyo)
-      // ----------------------------------------------
-      const messagesContainer = document.getElementById('floatingMessages');
-      const frases = [
-        "Te quiero mucho",
-        "Nunca estás sola",
-        "Siempre estaré para ti",
-        "Eres luz en mi universo",
-        "Todo va a estar bien",
-        "Contigo siempre",
-        "Eres importante",
-        "No te rindas",
-        "Brillas con fuerza",
-        "Aquí estoy",
-        "Te abrazo desde aquí",
-        "Puedes con todo"
-      ];
-
-      function createFloatingMessages() {
-        // Limpiar container
-        messagesContainer.innerHTML = '';
-
-        // Crear un número de mensajes (entre 8 y 12, para que no esté muy saturado)
-        const numMessages = Math.min(12, frases.length);
-        // Mezclar frases para que salgan aleatorias
-        const shuffled = [...frases].sort(() => Math.random() - 0.5);
-        const selected = shuffled.slice(0, numMessages);
-
-        selected.forEach((texto, index) => {
-          const msg = document.createElement('div');
-          msg.className = 'message';
-
-          // Asignar clases para variar animaciones
-          if (index % 3 === 0) msg.classList.add('slow');
-          else if (index % 3 === 1) msg.classList.add('medium');
-          else msg.classList.add('fast');
-
-          if (index % 2 === 0) msg.classList.add('drift'); // mitad con animación alternativa
-
-          // Retraso aleatorio en animación para que no sincronicen
-          const randomDelay = (Math.random() * 8).toFixed(2);
-          msg.style.animationDelay = `-${randomDelay}s`; // valor negativo para empezar en medio de ciclo
-
-          // Posición vertical personalizada (top, bottom, etc) para distribuir mejor
-          // Los alineamos con flexbox en el contenedor, pero damos un pequeño desplazamiento adicional en translate
-          const startY = (Math.random() * 60 + 20); // 20% a 80% del contenedor
-          // Usamos margin y posicionamiento relativo desde el contenedor flex
-          msg.style.marginTop = `${(index * 3) % 15}vh`; 
-          msg.style.marginBottom = `${(index * 2) % 12}vh`;
-
-          // Ajuste horizontal extra
-          if (index % 2 === 0) {
-            msg.style.transform = `translateX(${Math.random() * 8 - 4}px)`;
-          }
-
-          msg.textContent = texto;
-          messagesContainer.appendChild(msg);
-        });
-
-        // después de crear, aplicar opacidad 1? no, porque las animaciones ya controlan opacity
-        // forzamos un pequeño repaint para que las animaciones corran
-      }
-
-      // ----------------------------------------------
-      // 3. INICIALIZACIÓN Y RESPONSIVE
-      // ----------------------------------------------
-      window.addEventListener('resize', () => {
-        resizeCanvas();
-        // No regeneramos las estrellas completamente para preservar movimiento, pero reajustamos dimensiones
+    function createFloatingMessages(){
+      messagesContainer.innerHTML='';
+      const shuffled=[...frases].sort(()=>Math.random()-0.5);
+      shuffled.forEach((texto,index)=>{
+        const msg=document.createElement('div');
+        msg.className='message';
+        if(index%3===0) msg.classList.add('slow');
+        else if(index%3===1) msg.classList.add('medium');
+        else msg.classList.add('fast');
+        if(index%2===0) msg.classList.add('drift');
+        const delay=(Math.random()*8).toFixed(2);
+        msg.style.animationDelay=-${delay}s;
+        msg.textContent=texto;
+        messagesContainer.appendChild(msg);
       });
+    }
+    createFloatingMessages();
 
-      // Inicio
-      resizeCanvas();
-      initStars();
-
-      // Lanzar animación
-      animateGalaxy();
-
-      // Crear mensajes
-      createFloatingMessages();
-
-      // Pequeño retoque: ajustar algunos mensajes si hay muchos en móvil
-      function adjustMessagesOnResize() {
-        // No es necesario, ya usamos clamp y media queries
-      }
-      window.addEventListener('resize', adjustMessagesOnResize);
-
-      // (opcional) cambiar mensajes cada cierto tiempo? mejor dejarlos fijos y con animación perpetua
-      // pero si se desea rotación, podríamos hacer un setInterval para cambiarlos.
-      // No lo hacemos para mantener simplicidad y que sea un ejemplo completo.
-    })();
+  })();
   </script>
 </body>
-
 </html>
