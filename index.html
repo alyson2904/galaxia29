@@ -1,161 +1,98 @@
-[6:17 p.m., 18/2/2026] Aly: <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Galaxia de apoyo · Mensajes flotantes</title>
-  <style>
-    /* ----- RESET Y ESTILOS GENERALES ----- */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Galaxia de apoyo · Mensajes flotantes</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{min-height:100vh;background:#03050f;font-family:'Segoe UI',sans-serif;overflow-x:hidden;color:white;}
 
-    body {
-      min-height: 100vh;
-      background-color: #03050f; /* negro base */
-      font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, sans-serif;
-      overflow-x: hidden;
-      color: white;
-    }
+.galaxy-wrapper{position:relative;width:100%;min-height:100vh;background: radial-gradient(ellipse at 40% 50%, #1a1035, #03010a 80%);overflow:hidden;}
 
-    /* Contenedor principal, ocupa toda la pantalla */
-    .galaxy-wrapper {
-      position: relative;
-      width: 100%;
-      min-height: 100vh;
-      background: radial-gradient(ellipse at 40% 50%,…
-[6:18 p.m., 18/2/2026] Aly: <!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Galaxia de apoyo · Mensajes flotantes</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { min-height:100vh; background:#03050f; font-family:'Segoe UI',sans-serif; overflow-x:hidden; color:white; }
+/* Estrellas parpadeantes con CSS puro */
+.stars {
+  position:absolute;
+  width:100%;
+  height:100%;
+  top:0; left:0;
+  z-index:1;
+  pointer-events:none;
+}
+.stars::after {
+  content:'';
+  position:absolute;
+  width:100%; height:100%;
+  background:
+    radial-gradient(1px 1px at 10% 20%, #fff, transparent),
+    radial-gradient(1px 1px at 30% 70%, #f8e2ff, transparent),
+    radial-gradient(1px 1px at 50% 40%, #b3d0ff, transparent),
+    radial-gradient(1px 1px at 70% 80%, #e2d5ff, transparent),
+    radial-gradient(1px 1px at 90% 30%, #ffecb3, transparent),
+    radial-gradient(1px 1px at 20% 90%, #c7b9ff, transparent);
+  background-repeat:no-repeat;
+  animation: twinkle 5s infinite alternate;
+  opacity:0.7;
+}
+@keyframes twinkle{0%{opacity:0.4;}100%{opacity:1;}}
 
-    .galaxy-wrapper { position:relative; width:100%; min-height:100vh; background: radial-gradient(ellipse at 40% 50%, #1a1035, #03010a 80%); overflow:hidden; }
+/* Nebulosas suaves con CSS puro */
+.nebula {position:absolute;width:100%;height:100%;top:0;left:0;z-index:2;pointer-events:none;opacity:0.5;mix-blend-mode:screen;}
+.nebula1 {background:radial-gradient(circle at 30% 40%, rgba(140,90,255,0.25), transparent 60%);filter:blur(20px);animation: drift 40s infinite alternate ease-in-out;}
+.nebula2 {background:radial-gradient(circle at 70% 60%, rgba(200,130,255,0.2), transparent 60%);filter:blur(25px);animation: drift2 50s infinite alternate-reverse;}
+@keyframes drift{0%{transform:translate(0,0);}100%{transform:translate(-3%,2%);}}
+@keyframes drift2{0%{transform:translate(0,0);}100%{transform:translate(2%,-3%);}}
 
-    /* Canvas ligero para estrellas parpadeantes */
-    #galaxy-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none; }
+/* Mensajes flotantes */
+.floating-messages {position:relative; z-index:10; width:100%; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem 1.5rem; pointer-events:none;}
+.message {
+  background: rgba(15,10,30,0.35); backdrop-filter:blur(4px); border-radius:60px; padding:0.8rem 2rem;
+  margin:0.6rem 0; font-size:clamp(1.2rem,5vw,2.2rem); color:#f0eaff; text-shadow:0 0 10px #b79eff,0 0 4px #6d41b3;
+  box-shadow:0 10px 20px -10px rgba(0,0,0,0.6); letter-spacing:1px; text-align:center;
+  white-space:nowrap; pointer-events:none; user-select:none; opacity:0;
+  animation: floatFade 9s infinite alternate ease-in-out; will-change:transform,opacity; max-width:90vw; line-height:1.4;
+}
+.message.slow{animation-duration:12s;animation-delay:-2s;}
+.message.medium{animation-duration:8s;animation-delay:-1s;}
+.message.fast{animation-duration:6s;}
+.message.drift{animation-name: floatFadeAlt;}
 
-    /* Nebulosas CSS (más ligero) */
-    .nebulae-layer { position:absolute; top:0; left:0; width:100%; height:100%; z-index:2; pointer-events:none; opacity:0.5; mix-blend-mode:screen; }
-    .nebula, .nebula2 { position:absolute; width:100%; height:100%; pointer-events:none; }
-    .nebula { background: radial-gradient(circle at 30% 40%, rgba(140,90,255,0.3), transparent 60%); filter:blur(15px); animation: drift 40s infinite alternate ease-in-out; }
-    .nebula2 { background: radial-gradient(circle at 70% 60%, rgba(200,130,255,0.25), transparent 60%); filter:blur(25px); animation: drift2 50s infinite alternate-reverse; }
-    @keyframes drift { 0% {transform:translate(0,0);} 100% {transform:translate(-3%,2%);} }
-    @keyframes drift2 { 0% {transform:translate(0,0);} 100% {transform:translate(2%,-3%);} }
+@keyframes floatFade{0%{transform:translate(0,0) scale(1);opacity:0.2;}25%{opacity:1;}50%{transform:translate(6px,-8px) scale(1.02);opacity:0.95;}75%{opacity:1;}100%{transform:translate(-4px,6px) scale(0.98);opacity:0.3;}}
+@keyframes floatFadeAlt{0%{transform:translate(0,0) rotate(0deg);opacity:0.1;}30%{transform:translate(-8px,-6px) rotate(-1deg);opacity:1;}70%{transform:translate(10px,4px) rotate(1deg);opacity:0.9;}100%{transform:translate(0,-6px) rotate(0deg);opacity:0.2;}}
 
-    /* Mensajes flotantes */
-    .floating-messages { position:relative; z-index:10; width:100%; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem 1.5rem; pointer-events:none; }
-    .message {
-      background: rgba(15,10,30,0.35); backdrop-filter:blur(4px); border:1px solid rgba(190,160,255,0.2);
-      border-radius:60px; padding:0.8rem 2rem; margin:0.6rem 0; font-size:clamp(1.2rem,5vw,2.2rem); font-weight:400; color:#f0eaff;
-      text-shadow:0 0 10px #b79eff,0 0 4px #6d41b3; box-shadow:0 10px 20px -10px rgba(0,0,0,0.6); letter-spacing:1px;
-      text-align:center; white-space:nowrap; transition:all 0.2s ease; pointer-events:none; user-select:none; opacity:0;
-      animation: floatFade 9s infinite alternate ease-in-out; will-change:transform,opacity; max-width:90vw; line-height:1.4;
-    }
-    .message.slow { animation-duration:12s; animation-delay:-2s; }
-    .message.medium { animation-duration:8s; animation-delay:-1s; }
-    .message.fast { animation-duration:6s; }
+.message:nth-child(odd){align-self:flex-start;margin-left:5%;}
+.message:nth-child(even){align-self:flex-end;margin-right:5%;}
+.message:nth-child(3n){align-self:center;}
+@media(max-width:600px){.message:nth-child(odd){margin-left:2%;}.message:nth-child(even){margin-right:2%;}.message{white-space:normal;word-break:break-word;padding:0.7rem 1.4rem;}}
 
-    @keyframes floatFade {
-      0% {transform:translate(0,0) scale(1); opacity:0.2;}
-      25% {opacity:1;}
-      50% {transform:translate(6px,-8px) scale(1.02); opacity:0.95;}
-      75% {opacity:1;}
-      100% {transform:translate(-4px,6px) scale(0.98); opacity:0.3;}
-    }
-
-    .message.drift { animation-name: floatFadeAlt; }
-    @keyframes floatFadeAlt {
-      0% {transform:translate(0,0) rotate(0deg); opacity:0.1;}
-      30% {transform:translate(-8px,-6px) rotate(-1deg); opacity:1;}
-      70% {transform:translate(10px,4px) rotate(1deg); opacity:0.9;}
-      100% {transform:translate(0,-6px) rotate(0deg); opacity:0.2;}
-    }
-
-    .message:nth-child(odd){align-self:flex-start;margin-left:5%;}
-    .message:nth-child(even){align-self:flex-end;margin-right:5%;}
-    .message:nth-child(3n){align-self:center;}
-    @media(max-width:600px){.message:nth-child(odd){margin-left:2%;}.message:nth-child(even){margin-right:2%;} .message{white-space:normal; word-break:break-word; padding:0.7rem 1.4rem;} }
-
-    /* Créditos */
-    .credit { position:absolute; bottom:12px; right:20px; color:rgba(255,240,255,0.3); font-size:0.8rem; z-index:20; pointer-events:none; backdrop-filter:blur(2px); padding:0.2rem 0.8rem; border-radius:40px; background:rgba(10,5,20,0.2); }
-
-  </style>
+.credit{position:absolute;bottom:12px;right:20px;color:rgba(255,240,255,0.3);font-size:0.8rem;z-index:20;pointer-events:none;backdrop-filter:blur(2px);padding:0.2rem 0.8rem;border-radius:40px;background:rgba(10,5,20,0.2);}
+</style>
 </head>
 <body>
-  <div class="galaxy-wrapper">
-    <canvas id="galaxy-canvas"></canvas>
-    <div class="nebulae-layer">
-      <div class="nebula"></div>
-      <div class="nebula2"></div>
-    </div>
-    <div class="floating-messages" id="floatingMessages"></div>
-    <div class="credit">💫 siempre cerca de ti</div>
-  </div>
+<div class="galaxy-wrapper">
+  <div class="stars"></div>
+  <div class="nebula nebula1"></div>
+  <div class="nebula nebula2"></div>
+  <div class="floating-messages" id="floatingMessages"></div>
+  <div class="credit">💫 siempre cerca de ti</div>
+</div>
 
-  <script>
-  (function(){
-    const canvas=document.getElementById('galaxy-canvas');
-    const ctx=canvas.getContext('2d');
-    let width,height,stars=[];
-    const STAR_COUNT=50; // menos estrellas, más ligero
-    const NEBULA_PALETTE=['138,43,226','123,104,238','72,61,139','25,25,112','147,112,219','153,50,204'];
+<script>
+const messagesContainer=document.getElementById('floatingMessages');
+const frases=["Te quiero mucho","Nunca estás sola","Siempre estaré para ti","Eres luz en mi universo","Todo va a estar bien","Contigo siempre","Eres importante","No te rindas","Brillas con fuerza","Aquí estoy","Te abrazo desde aquí","Puedes con todo"];
 
-    function initStars(){
-      stars=[];
-      for(let i=0;i<STAR_COUNT;i++){
-        stars.push({x:Math.random(),y:Math.random(),radius:Math.random()*1.5+0.5,brightness:Math.random()*0.7+0.3,colorIdx:Math.floor(Math.random()*NEBULA_PALETTE.length),pulse:Math.random()*Math.PI*2,pulseSpeed:0.01+Math.random()*0.02});
-      }
-    }
-
-    function resizeCanvas(){width=window.innerWidth;height=window.innerHeight;canvas.width=width;canvas.height=height;}
-
-    function drawStars(){
-      ctx.clearRect(0,0,width,height);
-      for(let s of stars){
-        s.pulse+=s.pulseSpeed;
-        const alpha=s.brightness*(0.7+0.4*Math.sin(s.pulse))*0.9;
-        ctx.beginPath();
-        ctx.arc(s.x*width,s.y*height,s.radius,0,2*Math.PI);
-        ctx.fillStyle=rgba(${NEBULA_PALETTE[s.colorIdx]},${alpha});
-        ctx.fill();
-      }
-    }
-
-    function animateStars(){ drawStars(); requestAnimationFrame(animateStars); }
-
-    window.addEventListener('resize',resizeCanvas);
-    resizeCanvas(); initStars(); animateStars();
-
-    // Mensajes flotantes
-    const messagesContainer=document.getElementById('floatingMessages');
-    const frases=["Te quiero mucho","Nunca estás sola","Siempre estaré para ti","Eres luz en mi universo","Todo va a estar bien","Contigo siempre","Eres importante","No te rindas","Brillas con fuerza","Aquí estoy","Te abrazo desde aquí","Puedes con todo"];
-
-    function createFloatingMessages(){
-      messagesContainer.innerHTML='';
-      const shuffled=[...frases].sort(()=>Math.random()-0.5);
-      shuffled.forEach((texto,index)=>{
-        const msg=document.createElement('div');
-        msg.className='message';
-        if(index%3===0) msg.classList.add('slow');
-        else if(index%3===1) msg.classList.add('medium');
-        else msg.classList.add('fast');
-        if(index%2===0) msg.classList.add('drift');
-        const delay=(Math.random()*8).toFixed(2);
-        msg.style.animationDelay=-${delay}s;
-        msg.textContent=texto;
-        messagesContainer.appendChild(msg);
-      });
-    }
-    createFloatingMessages();
-
-  })();
-  </script>
+frases.forEach((texto,index)=>{
+  const msg=document.createElement('div');
+  msg.className='message';
+  if(index%3===0) msg.classList.add('slow');
+  else if(index%3===1) msg.classList.add('medium');
+  else msg.classList.add('fast');
+  if(index%2===0) msg.classList.add('drift');
+  const delay=(Math.random()*8).toFixed(2);
+  msg.style.animationDelay=-${delay}s;
+  msg.textContent=texto;
+  messagesContainer.appendChild(msg);
+});
+</script>
 </body>
 </html>
